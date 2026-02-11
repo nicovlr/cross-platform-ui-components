@@ -1,0 +1,19 @@
+# Build
+build/
+.build/
+DerivedData/
+*.o
+*.a
+*.dylib
+
+# Xcode
+xcuserdata/
+*.xcuserstate
+*.xccheckout
+
+# SPM
+.swiftpm/
+
+# OS
+.DS_Store
+*.swp
