@@ -1,38 +1,64 @@
 # CrossUI
 
-Reusable UI components for Apple platforms. Swift, Objective-C, and C++ where performance matters.
+A collection of reusable UI components for Apple platforms, spanning **Swift**, **Objective-C**, and **C++**. Built for performance-critical scenarios where working across the full stack — from SwiftUI down to system-level code — is necessary.
 
-## Why
+## Components
 
-Needed a shared set of components across a few personal projects. This is the extraction — nothing fancy, just things I keep rewriting.
+### SwiftUI
 
-## What's in here
-
-### Swift / SwiftUI
-- `AdaptiveStack` — switches between H/V stack based on size class
-- `ShimmerView` — loading placeholder with shimmer animation
-- `AsyncImageLoader` — image loading with cache and placeholder
+| Component | Description |
+|-----------|-------------|
+| `AdaptiveStack` | Automatically switches between `HStack`/`VStack` based on horizontal size class |
+| `ShimmerView` | Skeleton loading placeholder with configurable shimmer animation + `.shimmerPlaceholder()` view modifier |
+| `CachedAsyncImage` | Async image loader with `NSCache` (50MB limit, LRU eviction) |
 
 ### UIKit / Objective-C
-- `NVGradientView` — gradient background view (used in older projects)
-- `NVRoundedButton` — rounded button with built-in press animation
 
-### C++
-- `ColorUtils` — fast color space conversions (sRGB ↔ linear, HSL ↔ RGB)
-- `LayoutEngine` — lightweight flex-like layout calculator
+| Component | Description |
+|-----------|-------------|
+| `NVGradientView` | `CAGradientLayer`-backed gradient view with dark mode support (`traitCollectionDidChange`) |
+| `NVRoundedButton` | Rounded button with spring-animated press effect (scale on touch, spring back on release) |
+| `GradientViewRepresentable` | `UIViewRepresentable` bridge — wraps Objective-C views for use in SwiftUI |
 
-## Structure
+### C++ (Performance Layer)
+
+| Component | Description |
+|-----------|-------------|
+| `ColorUtils` | Fast color space conversions: sRGB ↔ linear (gamma decode/encode), HSL ↔ RGB, pack/unpack RGBA8, linear interpolation |
+| `LayoutEngine` | Lightweight flex-like layout calculator — row/column direction, flex grow, main/cross axis alignment, spacing, margins. Thread-safe, no UI dependency. |
+
+## Architecture
 
 ```
 Sources/
 ├── SwiftUI/       # Modern SwiftUI components
-├── UIKit/         # UIKit wrappers and views
-├── ObjC/          # Objective-C legacy components
-└── Cpp/           # Performance-critical utilities
-    ├── include/   # Headers
-    └── src/       # Implementation
+├── UIKit/         # UIViewRepresentable bridges
+├── ObjC/          # Objective-C UIKit components
+└── Cpp/
+    ├── include/   # C++ headers
+    └── src/       # C++ implementation
+Tests/
+├── ColorUtilsTests.cpp
+└── LayoutEngineTests.cpp
 ```
 
-## Notes
+The C++ layer is intentionally decoupled from UIKit/SwiftUI — it handles pure computation (color math, layout calculation) that can run on any thread without UI framework dependencies. The Objective-C components provide UIKit support, and SwiftUI components represent the modern API surface. The UIKit bridge layer enables gradual migration between the two.
 
-The C++ layout engine is experimental — trying to get something that can run layout calculations off the main thread. Not production ready yet.
+## Building & Testing
+
+```bash
+# Run all C++ tests
+make test
+
+# Build individually
+make build/color_tests
+make build/layout_tests
+```
+
+Requires C++17. Compiled with `clang++`.
+
+## Design Decisions
+
+- **C++ for computation** — Color space math and layout calculations run off the main thread without Swift concurrency overhead
+- **Self-contained components** — No shared protocols or base classes, each component is independent to reduce coupling
+- **UIKit ↔ SwiftUI bridging** — `UIViewRepresentable` wrappers allow incremental adoption of SwiftUI alongside existing UIKit code
